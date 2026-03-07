@@ -1,0 +1,146 @@
+.polisher-grid {
+  display: grid;
+  gap: 1rem;
+}
+
+.polisher-panel {
+  padding: 1rem;
+}
+
+.polisher-label-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  margin-bottom: 0.5rem;
+}
+
+.polisher-textarea {
+  width: 100%;
+  min-height: 220px;
+  resize: vertical;
+  border: 1px solid var(--color-border);
+  border-radius: 10px;
+  padding: 0.75rem;
+  background: var(--color-surface);
+}
+
+.polisher-controls {
+  display: grid;
+  gap: 0.75rem;
+}
+
+.polisher-slider-row {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 0.75rem;
+  align-items: center;
+}
+
+.polisher-slider-wrap {
+  display: grid;
+  gap: 0.4rem;
+}
+
+.polisher-level-meta {
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.92rem;
+}
+
+.polisher-slider {
+  width: 100%;
+  accent-color: var(--color-accent);
+}
+
+.polisher-button {
+  border: 0;
+  border-radius: 10px;
+  padding: 0.7rem 1.2rem;
+  background: var(--color-accent);
+  color: var(--color-dark);
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  cursor: pointer;
+}
+
+.polisher-button:hover:not(:disabled) {
+  filter: brightness(0.96);
+}
+
+.polisher-button:disabled {
+  cursor: not-allowed;
+  opacity: 0.65;
+}
+
+.polisher-output {
+  min-height: 160px;
+  padding: 1rem;
+  border-radius: 10px;
+  border: 1px solid var(--color-border);
+  background: var(--color-surface);
+  white-space: pre-wrap;
+}
+
+.setup-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgb(0 0 0 / 55%);
+  display: grid;
+  place-items: center;
+  padding: 1rem;
+  z-index: 1000;
+}
+
+.setup-modal {
+  width: min(540px, 100%);
+  padding: 1rem;
+}
+
+.setup-form {
+  display: grid;
+  gap: 0.8rem;
+}
+
+.setup-field {
+  display: grid;
+  gap: 0.35rem;
+}
+
+.setup-input,
+.setup-select {
+  width: 100%;
+  border: 1px solid var(--color-border);
+  border-radius: 8px;
+  padding: 0.55rem 0.65rem;
+}
+
+.setup-error {
+  margin: 0;
+  color: var(--color-danger);
+  font-size: 0.92rem;
+}
+
+.toast {
+  position: fixed;
+  right: 1rem;
+  bottom: 1rem;
+  z-index: 1100;
+  width: min(520px, calc(100% - 2rem));
+  padding: 0.75rem 0.9rem;
+  border-radius: 10px;
+  border: 1px solid #f4a8a0;
+  background: #ffe4e2;
+  color: #7a271a;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 0.8rem;
+}
+
+.toast button {
+  border: 0;
+  background: transparent;
+  color: inherit;
+  font-size: 1rem;
+  cursor: pointer;
+}

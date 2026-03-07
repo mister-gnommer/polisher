@@ -1,0 +1,66 @@
+:root {
+  --color-accent: #ff9514;
+  --color-dark: #282828;
+  --color-bg: #d6d6d6;
+  --color-text: #000000;
+  --color-surface: #f5f5f5;
+  --color-surface-strong: #ffffff;
+  --color-border: #bdbdbd;
+  --color-danger: #b42318;
+  --shadow-soft: 0 8px 24px rgb(0 0 0 / 10%);
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  min-height: 100vh;
+  background: var(--color-bg);
+  color: var(--color-text);
+  font-family: Inter, system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  line-height: 1.5;
+}
+
+.app-shell {
+  width: min(900px, 100%);
+  margin: 0 auto;
+  padding: 2rem 1rem 3rem;
+}
+
+.heading {
+  margin: 0 0 0.5rem;
+  color: var(--color-dark);
+  font-size: clamp(1.5rem, 3vw, 2rem);
+}
+
+.subheading {
+  margin: 0 0 1.5rem;
+  color: rgb(0 0 0 / 75%);
+}
+
+.card {
+  background: var(--color-surface-strong);
+  border: 1px solid var(--color-border);
+  border-radius: 12px;
+  box-shadow: var(--shadow-soft);
+}
+
+.label {
+  color: var(--color-dark);
+  font-weight: 600;
+}
+
+.muted {
+  color: rgb(0 0 0 / 68%);
+}
+
+button,
+input,
+textarea,
+select {
+  font: inherit;
+}
