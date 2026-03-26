@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { type PolishApiResponse } from '../lib/polishApi';
 import { DEFAULT_POLISHING_LEVEL, getEffectiveLevel, POLISHING_LEVELS } from '../lib/polishingLevels';
 import { buildSystemPrompt } from '../lib/polishPrompt';
@@ -18,6 +18,8 @@ export default function PolisherApp() {
   const [isLoading, setIsLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [isSetupModalOpen, setIsSetupModalOpen] = useState(true);
+  const [copyLabel, setCopyLabel] = useState<'Copy' | 'Copied!'>('Copy');
+  const copyTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => {
     const storedApiKey = localStorage.getItem(API_KEY_STORAGE_KEY)?.trim() ?? '';
@@ -53,6 +55,13 @@ export default function PolisherApp() {
     return Boolean(apiKey) && Boolean(provider) && inputText.trim().length > 0 && !isLoading;
   }, [apiKey, provider, inputText, isLoading]);
 
+  const handleCopy = () => {
+    navigator.clipboard.writeText(outputText);
+    if (copyTimerRef.current) clearTimeout(copyTimerRef.current);
+    setCopyLabel('Copied!');
+    copyTimerRef.current = setTimeout(() => setCopyLabel('Copy'), 2000);
+  };
+
   const handleSaveSetup = (nextApiKey: string, nextProvider: string) => {
     setApiKey(nextApiKey);
     setProvider(nextProvider);
@@ -68,6 +77,7 @@ export default function PolisherApp() {
 
     setIsLoading(true);
     setErrorMessage(null);
+    setOutputText('');
 
     try {
       const response = await fetch('/api/polish', {
@@ -147,6 +157,11 @@ export default function PolisherApp() {
         <section className="card polisher-panel">
           <div className="polisher-label-row">
             <strong className="label">Polished text</strong>
+            {outputText && (
+              <button className="polisher-copy-button" type="button" onClick={handleCopy}>
+                {copyLabel}
+              </button>
+            )}
           </div>
           <div className="polisher-output muted">
             {outputText || (isLoading ? 'Polishing...' : 'Your polished text will appear here.')}
