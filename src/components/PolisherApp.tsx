@@ -1,3 +1,4 @@
+import { diffWords } from 'diff';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { type PolishApiResponse } from '../lib/polishApi';
 import { DEFAULT_POLISHING_LEVEL, getEffectiveLevel, POLISHING_LEVELS } from '../lib/polishingLevels';
@@ -19,6 +20,7 @@ export default function PolisherApp() {
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [isSetupModalOpen, setIsSetupModalOpen] = useState(true);
   const [copyLabel, setCopyLabel] = useState<'Copy' | 'Copied!'>('Copy');
+  const [showDiff, setShowDiff] = useState(false);
   const copyTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => {
@@ -158,13 +160,41 @@ export default function PolisherApp() {
           <div className="polisher-label-row">
             <strong className="label">Polished text</strong>
             {outputText && (
-              <button className="polisher-copy-button" type="button" onClick={handleCopy}>
-                {copyLabel}
-              </button>
+              <div className="polisher-output-actions">
+                <button
+                  className="polisher-copy-button"
+                  type="button"
+                  onClick={() => setShowDiff((v) => !v)}
+                >
+                  {showDiff ? 'Output' : 'Diff'}
+                </button>
+                <button className="polisher-copy-button" type="button" onClick={handleCopy}>
+                  {copyLabel}
+                </button>
+              </div>
             )}
           </div>
           <div className="polisher-output muted">
-            {outputText || (isLoading ? 'Polishing...' : 'Your polished text will appear here.')}
+            {!outputText ? (
+              isLoading ? 'Polishing...' : 'Your polished text will appear here.'
+            ) : showDiff ? (
+              diffWords(inputText, outputText).map((part, i) => (
+                <span
+                  key={i}
+                  className={
+                    part.added
+                      ? 'diff-added'
+                      : part.removed
+                        ? 'diff-removed'
+                        : undefined
+                  }
+                >
+                  {part.value}
+                </span>
+              ))
+            ) : (
+              outputText
+            )}
           </div>
         </section>
       </div>

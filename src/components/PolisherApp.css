@@ -72,6 +72,11 @@
   opacity: 0.65;
 }
 
+.polisher-output-actions {
+  display: flex;
+  gap: 0.4rem;
+}
+
 .polisher-copy-button {
   border: 1px solid var(--color-border);
   border-radius: 6px;
@@ -92,6 +97,19 @@
   border: 1px solid var(--color-border);
   background: var(--color-surface);
   white-space: pre-wrap;
+}
+
+.diff-added {
+  background: #d4f7d4;
+  color: #1a5c1a;
+  border-radius: 2px;
+}
+
+.diff-removed {
+  background: #fde8e8;
+  color: #7a1a1a;
+  text-decoration: line-through;
+  border-radius: 2px;
 }
 
 .setup-backdrop {

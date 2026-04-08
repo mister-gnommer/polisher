@@ -25,3 +25,6 @@ pnpm-debug.log*
 
 # vercel output
 .vercel/
+
+# claude code session tracking
+sessions.md
