@@ -1,1 +1,2 @@
 - `06bbf3df-fb72-4589-af15-7ba7714910f3` — 2026-03-26 — Familiarizing with project; asked about .cursor rules and Claude Code compatibility
+- `f9c1e584-1296-4702-84a9-f2f7e26a0563` — 2026-04-08 — Checking for TODOs in the project
