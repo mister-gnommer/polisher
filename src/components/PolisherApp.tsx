@@ -49,6 +49,11 @@ export default function PolisherApp() {
     return () => window.clearTimeout(timer);
   }, [errorMessage]);
 
+  useEffect(() => {
+    setOutputText('');
+    setShowDiff(false);
+  }, [inputText]);
+
   const effectiveLevel = getEffectiveLevel(level);
   const currentLevel = POLISHING_LEVELS[effectiveLevel];
   const isInteractionBlocked = isSetupModalOpen || isLoading;
