@@ -112,6 +112,106 @@
   border-radius: 2px;
 }
 
+.settings-trigger {
+  position: fixed;
+  top: 1rem;
+  right: 1rem;
+  z-index: 900;
+  border: 1px solid var(--color-border);
+  border-radius: 8px;
+  padding: 0.3rem 0.7rem;
+  background: var(--color-surface-strong);
+  font-size: 0.85rem;
+  cursor: pointer;
+  color: rgb(0 0 0 / 68%);
+}
+
+.settings-trigger:hover {
+  background: var(--color-border);
+}
+
+.settings-trigger-icon {
+  width: 1em;
+  height: 1em;
+  vertical-align: middle;
+}
+
+.settings-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 1.25rem;
+}
+
+.settings-close-button {
+  border: 0;
+  background: transparent;
+  font-size: 1rem;
+  cursor: pointer;
+  color: rgb(0 0 0 / 55%);
+  padding: 0.1rem 0.3rem;
+  line-height: 1;
+}
+
+.settings-close-button:hover {
+  color: var(--color-text);
+}
+
+.settings-section {
+  margin-bottom: 1.5rem;
+}
+
+.settings-section:last-child {
+  margin-bottom: 0;
+}
+
+.settings-section-desc {
+  margin: 0.25rem 0 0.75rem;
+  font-size: 0.92rem;
+}
+
+.settings-danger-button {
+  border: 1px solid var(--color-danger);
+  border-radius: 8px;
+  padding: 0.5rem 1rem;
+  background: transparent;
+  color: var(--color-danger);
+  font-weight: 600;
+  cursor: pointer;
+  font-size: 0.92rem;
+}
+
+.settings-danger-button:hover {
+  background: #fff0f0;
+}
+
+.settings-planned-list {
+  list-style: none;
+  margin: 0.5rem 0 0;
+  padding: 0;
+  display: grid;
+  gap: 0.5rem;
+}
+
+.settings-planned-item {
+  display: flex;
+  align-items: baseline;
+  gap: 0.5rem;
+  font-size: 0.92rem;
+  color: rgb(0 0 0 / 68%);
+}
+
+.settings-planned-badge {
+  flex-shrink: 0;
+  font-size: 0.72rem;
+  font-style: italic;
+  border: 1px solid var(--color-border);
+  border-radius: 4px;
+  padding: 0.05rem 0.35rem;
+  color: rgb(0 0 0 / 45%);
+  white-space: nowrap;
+}
+
 .setup-backdrop {
   position: fixed;
   inset: 0;
