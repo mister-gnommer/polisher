@@ -10,6 +10,8 @@ import SetupModal from './SetupModal';
 
 const API_KEY_STORAGE_KEY = 'polisher.apikey';
 const PROVIDER_STORAGE_KEY = 'polisher.provider';
+const LIVE_POLISH_KEY = 'polisher.livePolish';
+const LIVE_DEBOUNCE_MS = 800;
 
 export default function PolisherApp() {
   const [apiKey, setApiKey] = useState<string | null>(null);
@@ -23,7 +25,19 @@ export default function PolisherApp() {
   const [copyLabel, setCopyLabel] = useState<'Copy' | 'Copied!'>('Copy');
   const [showDiff, setShowDiff] = useState(false);
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
+  const [isLiveEnabled, setIsLiveEnabled] = useState<boolean>(() => {
+    try {
+      return localStorage.getItem(LIVE_POLISH_KEY) === 'true';
+    } catch {
+      return false;
+    }
+  });
   const copyTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const debounceTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const performPolishRef = useRef<(clearOutput: boolean) => Promise<void>>(async () => {});
+  const abortControllerRef = useRef<AbortController | null>(null);
+  const isLiveEnabledRef = useRef(isLiveEnabled);
+  isLiveEnabledRef.current = isLiveEnabled;
 
   useEffect(() => {
     const storedApiKey = localStorage.getItem(API_KEY_STORAGE_KEY)?.trim() ?? '';
@@ -52,13 +66,52 @@ export default function PolisherApp() {
   }, [errorMessage]);
 
   useEffect(() => {
-    setOutputText('');
-    setShowDiff(false);
+    if (!isLiveEnabledRef.current) {
+      setOutputText('');
+      setShowDiff(false);
+    }
   }, [inputText]);
+
+  useEffect(() => {
+    if (!isLiveEnabledRef.current || !inputText.trim()) {
+      return;
+    }
+
+    if (debounceTimerRef.current) {
+      clearTimeout(debounceTimerRef.current);
+    }
+
+    debounceTimerRef.current = setTimeout(() => {
+      performPolishRef.current(false);
+    }, LIVE_DEBOUNCE_MS);
+
+    return () => {
+      if (debounceTimerRef.current) {
+        clearTimeout(debounceTimerRef.current);
+      }
+    };
+  }, [inputText]);
+
+  useEffect(() => {
+    if (!isLiveEnabled && debounceTimerRef.current) {
+      clearTimeout(debounceTimerRef.current);
+      debounceTimerRef.current = null;
+    }
+  }, [isLiveEnabled]);
+
+  useEffect(() => {
+    localStorage.setItem(LIVE_POLISH_KEY, String(isLiveEnabled));
+  }, [isLiveEnabled]);
+
+  useEffect(() => {
+    return () => {
+      abortControllerRef.current?.abort();
+    };
+  }, []);
 
   const effectiveLevel = getEffectiveLevel(level);
   const currentLevel = POLISHING_LEVELS[effectiveLevel];
-  const isInteractionBlocked = isSetupModalOpen || isLoading;
+  const isInteractionBlocked = isSetupModalOpen || (isLoading && !isLiveEnabled);
 
   const canPolish = useMemo(() => {
     return Boolean(apiKey) && Boolean(provider) && inputText.trim().length > 0 && !isLoading;
@@ -74,9 +127,15 @@ export default function PolisherApp() {
   const handleClearSettings = () => {
     localStorage.removeItem(API_KEY_STORAGE_KEY);
     localStorage.removeItem(PROVIDER_STORAGE_KEY);
+    localStorage.removeItem(LIVE_POLISH_KEY);
     setApiKey(null);
     setProvider(null);
+    setIsLiveEnabled(false);
     setIsSettingsOpen(false);
+    if (debounceTimerRef.current) {
+      clearTimeout(debounceTimerRef.current);
+      debounceTimerRef.current = null;
+    }
     setIsSetupModalOpen(true);
   };
 
@@ -86,22 +145,29 @@ export default function PolisherApp() {
     setIsSetupModalOpen(false);
   };
 
-  const handlePolish = async () => {
-    if (!canPolish) {
+  const performPolish = async (clearOutput: boolean) => {
+    if (!apiKey || !provider || !inputText.trim()) {
       return;
     }
+
+    abortControllerRef.current?.abort();
+    const controller = new AbortController();
+    abortControllerRef.current = controller;
 
     const prompt = buildSystemPrompt(POLISHING_LEVELS[effectiveLevel].description);
 
     setIsLoading(true);
     setErrorMessage(null);
-    setOutputText('');
+    if (clearOutput) {
+      setOutputText('');
+    }
 
     try {
       const response = await fetch('/api/polish', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ apiKey, provider, inputText, systemPrompt: prompt }),
+        signal: controller.signal,
       });
 
       const data: PolishApiResponse = await response.json();
@@ -115,11 +181,31 @@ export default function PolisherApp() {
 
       setOutputText(data.result);
     } catch (error) {
+      if (error instanceof DOMException && error.name === 'AbortError') {
+        return;
+      }
       console.error('Provider error:', error);
       setErrorMessage('Something went wrong while contacting the provider. Please try again.');
     } finally {
-      setIsLoading(false);
+      if (abortControllerRef.current === controller) {
+        setIsLoading(false);
+      }
     }
+  };
+
+  performPolishRef.current = performPolish;
+
+  const handlePolish = async () => {
+    if (!canPolish) {
+      return;
+    }
+
+    if (debounceTimerRef.current) {
+      clearTimeout(debounceTimerRef.current);
+      debounceTimerRef.current = null;
+    }
+
+    await performPolish(true);
   };
 
   return (
@@ -178,6 +264,20 @@ export default function PolisherApp() {
               {isLoading ? 'Polishing...' : 'POLISH'}
             </button>
           </div>
+
+          <label className={`live-toggle ${isInteractionBlocked ? 'live-toggle--disabled' : ''}`}>
+            <input
+              type="checkbox"
+              className="live-toggle-checkbox"
+              checked={isLiveEnabled}
+              onChange={(event) => setIsLiveEnabled(event.target.checked)}
+              disabled={isInteractionBlocked}
+            />
+            <span className="live-toggle-track">
+              <span className="live-toggle-thumb" />
+            </span>
+            <span className="live-toggle-label">Live polish</span>
+          </label>
 
           <p className="muted">{currentLevel.description}</p>
         </section>

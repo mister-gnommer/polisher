@@ -6,7 +6,6 @@ interface SettingsModalProps {
 
 const PLANNED_FEATURES = [
   'Additional polishing rules (toggle dash normalization and friends)',
-  'Live debounced polishing — no button required',
   'Model & temperature selection',
   'Rich text input/output',
 ];
