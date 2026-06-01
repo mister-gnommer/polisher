@@ -2,7 +2,7 @@
 
 Polisher is a small frontend-only web app that wraps an LLM API to improve users' writing. The user supplies their own API key; Polisher adds a structured system prompt and sends a single-turn request to the provider.
 
-> **This project is 100% vibecoded.** No code was reviewed by a human. It may someday serve as a case study in fixing vibecoded apps — but that day is not today.
+> **Built spec-first with AI assistance.** The implementation plan and design decisions were authored by a human; the code was generated and iterated on with AI tooling.
 
 ## Tech Stack
 
