@@ -88,11 +88,3 @@ npm run preview
 - Ensure **Production Branch** is `main`
 - Every push to `main` triggers a new production build and deployment on Vercel’s free Hobby tier.
 
-## TODO/future ideas
-
-### Ideas
-
-- Additional user-selectable rules (beyond dash normalization)
-- Rich text input/output
-- Model and temperature selection
-

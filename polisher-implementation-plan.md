@@ -311,19 +311,7 @@ In `handlePolish()`:
   - [ ] Use GPT 5.2 model via Abacus with `temperature = 0.5`.
 
 
-## 12. Non-Goals / Future TODOs (explicitly do NOT implement now)
-
-These are future features and should be left as commented TODOs or separate notes:
-- [ ] Allow user to choose additional rules (like the dash normalization rule) to apply.
-- [ ] Use rich text input and rich text output.
-- [ ] Allow choosing model and temperature.
-- [ ] Add a button to copy edited text.
-- [ ] Live, debounced polishes — automatically trigger a polish request after the user stops typing (debounced), without requiring the POLISH button click.
-- [x] Clear output when input changes (not just on focus switch) — reset `outputText` whenever `inputText` actually changes value, so stale results are not shown alongside new input.
-- [ ] Settings widget/popup — accessible from the main UI, containing at minimum a "Clear local settings" action that removes `polisher.apikey` and `polisher.provider` from localStorage and reopens the setup modal.
-
-
-## 13. Final Integration Checks
+## 12. Final Integration Checks
 
 - [ ] Verify localStorage keys:
   - [ ] `polisher.apikey`

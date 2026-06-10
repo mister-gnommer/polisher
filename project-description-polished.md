@@ -77,9 +77,3 @@ When no level is chosen (for example by an overly tech-savvy user), fall back to
 
 If the provider returns an error, show a simple, readable error toast and keep the user’s input intact. Show the full error in the console to allow debugging.
 
-## future development (TODO list) - DO NOT IMPLEMENT NOW!
-
-- [ ] allow user to choose additional rules (like the one with dashes) to use
-- [ ] use rich text input and return
-- [ ] allow choosing model and temperature
-- [ ] button to copy edited text
