@@ -16,15 +16,18 @@ const LIVE_DEBOUNCE_MS = 800;
 
 function computeDiffRatio(input: string, output: string): number {
   const parts = diffWords(input, output);
-  let changedCount = 0;
+  let changedWords = 0;
+  let totalWords = 0;
 
   for (const part of parts) {
+    const words = part.value.trim().split(/\s+/).filter(Boolean);
+    totalWords += words.length;
     if (part.added || part.removed) {
-      changedCount++;
+      changedWords += words.length;
     }
   }
 
-  return parts.length > 0 ? changedCount / parts.length : 0;
+  return totalWords > 0 ? changedWords / totalWords : 0;
 }
 
 export default function PolisherApp() {
@@ -134,6 +137,13 @@ export default function PolisherApp() {
     return Boolean(apiKey) && Boolean(provider) && inputText.trim().length > 0 && !isLoading;
   }, [apiKey, provider, inputText, isLoading]);
 
+  const diffRatioPct = useMemo(() => {
+    if (!inputText.trim() || !outputText) {
+      return null;
+    }
+    return (computeDiffRatio(inputText, outputText) * 100).toFixed(1);
+  }, [inputText, outputText]);
+
   const handleCopy = () => {
     navigator.clipboard.writeText(outputText);
     if (copyTimerRef.current) clearTimeout(copyTimerRef.current);
@@ -204,7 +214,7 @@ export default function PolisherApp() {
       const words = inputText.trim().split(/\s+/).filter(Boolean);
       if (effectiveLevelAtCall >= 3 && words.length > 20) {
         const ratio = computeDiffRatio(inputText, data.result);
-        if (ratio < 0.05) {
+        if (ratio < 0.10) {
           setCelebrationDiffRatio(ratio);
           setShowCelebration(true);
         }
@@ -314,6 +324,7 @@ export default function PolisherApp() {
         <section className="card polisher-panel">
           <div className="polisher-label-row">
             <strong className="label">Polished text</strong>
+            {diffRatioPct !== null && <span className="muted"> ({diffRatioPct}% diff)</span>}
             {outputText && (
               <div className="polisher-output-actions">
                 <button

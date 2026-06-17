@@ -1,0 +1,1 @@
+The project deadline is next Friday. We need to finish the report, double-check the data, and send everything to the client by noon. If anyone has questions, please ask by Wednesday so we have enough time to make adjustments.
