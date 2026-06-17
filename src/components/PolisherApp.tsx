@@ -191,6 +191,15 @@ export default function PolisherApp() {
     }
 
     try {
+      // Easter egg: Cthulhu phrase bypasses LLM, forces celebration
+      const CTHULHU_PHRASE = "Ph'nglui mglw'nafh Cthulhu R'lyeh Wgah'nagl fhtan.";
+      if (inputText.trim() === CTHULHU_PHRASE) {
+        setOutputText(inputText);
+        setCelebrationDiffRatio(0);
+        setShowCelebration(true);
+        return;
+      }
+
       const response = await fetch('/api/polish', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
