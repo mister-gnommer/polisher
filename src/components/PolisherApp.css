@@ -322,6 +322,12 @@
   gap: 0.8rem;
 }
 
+.toast--info {
+  border-color: var(--color-accent);
+  background: #fff7ed;
+  color: var(--color-dark);
+}
+
 .toast button {
   border: 0;
   background: transparent;

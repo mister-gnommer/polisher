@@ -3,6 +3,7 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { type PolishApiResponse } from '../lib/polishApi';
 import { DEFAULT_POLISHING_LEVEL, getEffectiveLevel, POLISHING_LEVELS } from '../lib/polishingLevels';
 import { buildSystemPrompt } from '../lib/polishPrompt';
+import CelebrationToast from './CelebrationToast';
 import ErrorToast from './ErrorToast';
 import './PolisherApp.css';
 import SettingsModal from './SettingsModal';
@@ -12,6 +13,19 @@ const API_KEY_STORAGE_KEY = 'polisher.apikey';
 const PROVIDER_STORAGE_KEY = 'polisher.provider';
 const LIVE_POLISH_KEY = 'polisher.livePolish';
 const LIVE_DEBOUNCE_MS = 800;
+
+function computeDiffRatio(input: string, output: string): number {
+  const parts = diffWords(input, output);
+  let changedCount = 0;
+
+  for (const part of parts) {
+    if (part.added || part.removed) {
+      changedCount++;
+    }
+  }
+
+  return parts.length > 0 ? changedCount / parts.length : 0;
+}
 
 export default function PolisherApp() {
   const [apiKey, setApiKey] = useState<string | null>(null);
@@ -32,6 +46,8 @@ export default function PolisherApp() {
       return false;
     }
   });
+  const [showCelebration, setShowCelebration] = useState(false);
+  const [celebrationDiffRatio, setCelebrationDiffRatio] = useState(0);
   const copyTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const debounceTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const performPolishRef = useRef<(clearOutput: boolean) => Promise<void>>(async () => {});
@@ -66,6 +82,7 @@ export default function PolisherApp() {
   }, [errorMessage]);
 
   useEffect(() => {
+    setShowCelebration(false);
     if (!isLiveEnabledRef.current) {
       setOutputText('');
       setShowDiff(false);
@@ -157,6 +174,7 @@ export default function PolisherApp() {
     const prompt = buildSystemPrompt(POLISHING_LEVELS[effectiveLevel].description);
 
     setIsLoading(true);
+    setShowCelebration(false);
     setErrorMessage(null);
     if (clearOutput) {
       setOutputText('');
@@ -180,6 +198,17 @@ export default function PolisherApp() {
       }
 
       setOutputText(data.result);
+
+      // Celebration: level ≥ 3, > 20 words, diff < 5%
+      const effectiveLevelAtCall = getEffectiveLevel(level);
+      const words = inputText.trim().split(/\s+/).filter(Boolean);
+      if (effectiveLevelAtCall >= 3 && words.length > 20) {
+        const ratio = computeDiffRatio(inputText, data.result);
+        if (ratio < 0.05) {
+          setCelebrationDiffRatio(ratio);
+          setShowCelebration(true);
+        }
+      }
     } catch (error) {
       if (error instanceof DOMException && error.name === 'AbortError') {
         return;
@@ -337,6 +366,11 @@ export default function PolisherApp() {
         onSave={handleSaveSetup}
       />
       <ErrorToast message={errorMessage} onDismiss={() => setErrorMessage(null)} />
+      <CelebrationToast
+        message={showCelebration ? 'Already great! Very few changes needed.' : null}
+        diffRatio={celebrationDiffRatio}
+        onDismiss={() => setShowCelebration(false)}
+      />
     </>
   );
 }
