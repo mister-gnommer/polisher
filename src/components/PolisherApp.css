@@ -99,6 +99,13 @@
   white-space: pre-wrap;
 }
 
+.toggle-row {
+  display: flex;
+  align-items: center;
+  gap: 1.25rem;
+  flex-wrap: wrap;
+}
+
 .live-toggle {
   display: flex;
   align-items: center;

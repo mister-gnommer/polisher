@@ -1,5 +1,6 @@
-export const buildSystemPrompt = (levelDescription: string) =>
+export const buildSystemPrompt = (levelDescription: string, flowDescription?: string) =>
   `You are a strict text editor. Edit text provided by user according to this level: ${levelDescription}
+${flowDescription ? `\nAdditionally, where it improves readability:\n${flowDescription}` : ''}
 
 Rules:
 
