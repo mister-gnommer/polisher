@@ -1,7 +1,7 @@
 import { diffWords } from 'diff';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { type PolishApiResponse } from '../lib/polishApi';
-import { DEFAULT_POLISHING_LEVEL, getEffectiveLevel, POLISHING_LEVELS } from '../lib/polishingLevels';
+import { DEFAULT_POLISHING_LEVEL, FLOW_DESCRIPTIONS, getEffectiveLevel, POLISHING_LEVELS } from '../lib/polishingLevels';
 import { buildSystemPrompt } from '../lib/polishPrompt';
 import CelebrationToast from './CelebrationToast';
 import ErrorToast from './ErrorToast';
@@ -12,6 +12,7 @@ import SetupModal from './SetupModal';
 const API_KEY_STORAGE_KEY = 'polisher.apikey';
 const PROVIDER_STORAGE_KEY = 'polisher.provider';
 const LIVE_POLISH_KEY = 'polisher.livePolish';
+const FLOW_IMPROVEMENT_KEY = 'polisher.flowImprovement';
 const LIVE_DEBOUNCE_MS = 800;
 
 function computeDiffRatio(input: string, output: string): number {
@@ -45,6 +46,13 @@ export default function PolisherApp() {
   const [isLiveEnabled, setIsLiveEnabled] = useState<boolean>(() => {
     try {
       return localStorage.getItem(LIVE_POLISH_KEY) === 'true';
+    } catch {
+      return false;
+    }
+  });
+  const [isFlowEnabled, setIsFlowEnabled] = useState<boolean>(() => {
+    try {
+      return localStorage.getItem(FLOW_IMPROVEMENT_KEY) === 'true';
     } catch {
       return false;
     }
@@ -124,6 +132,10 @@ export default function PolisherApp() {
   }, [isLiveEnabled]);
 
   useEffect(() => {
+    localStorage.setItem(FLOW_IMPROVEMENT_KEY, String(isFlowEnabled));
+  }, [isFlowEnabled]);
+
+  useEffect(() => {
     return () => {
       abortControllerRef.current?.abort();
     };
@@ -155,9 +167,11 @@ export default function PolisherApp() {
     localStorage.removeItem(API_KEY_STORAGE_KEY);
     localStorage.removeItem(PROVIDER_STORAGE_KEY);
     localStorage.removeItem(LIVE_POLISH_KEY);
+    localStorage.removeItem(FLOW_IMPROVEMENT_KEY);
     setApiKey(null);
     setProvider(null);
     setIsLiveEnabled(false);
+    setIsFlowEnabled(false);
     setIsSettingsOpen(false);
     if (debounceTimerRef.current) {
       clearTimeout(debounceTimerRef.current);
@@ -181,7 +195,10 @@ export default function PolisherApp() {
     const controller = new AbortController();
     abortControllerRef.current = controller;
 
-    const prompt = buildSystemPrompt(POLISHING_LEVELS[effectiveLevel].description);
+    const prompt = buildSystemPrompt(
+      POLISHING_LEVELS[effectiveLevel].description,
+      isFlowEnabled ? FLOW_DESCRIPTIONS[effectiveLevel] : undefined,
+    );
 
     setIsLoading(true);
     setShowCelebration(false);
@@ -313,6 +330,21 @@ export default function PolisherApp() {
             </button>
           </div>
 
+          <div className="toggle-row">
+          <label className={`live-toggle ${isInteractionBlocked ? 'live-toggle--disabled' : ''}`}>
+            <input
+              type="checkbox"
+              className="live-toggle-checkbox"
+              checked={isFlowEnabled}
+              onChange={(event) => setIsFlowEnabled(event.target.checked)}
+              disabled={isInteractionBlocked}
+            />
+            <span className="live-toggle-track">
+              <span className="live-toggle-thumb" />
+            </span>
+            <span className="live-toggle-label">Improve readability flow</span>
+          </label>
+
           <label className={`live-toggle ${isInteractionBlocked ? 'live-toggle--disabled' : ''}`}>
             <input
               type="checkbox"
@@ -326,6 +358,7 @@ export default function PolisherApp() {
             </span>
             <span className="live-toggle-label">Live polish</span>
           </label>
+        </div>
 
           <p className="muted">{currentLevel.description}</p>
         </section>
