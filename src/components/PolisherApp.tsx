@@ -1,16 +1,17 @@
 import { diffWords } from 'diff';
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { type PolishApiResponse } from '../lib/polishApi';
 import { DEFAULT_POLISHING_LEVEL, FLOW_DESCRIPTIONS, getEffectiveLevel, POLISHING_LEVELS } from '../lib/polishingLevels';
 import { buildSystemPrompt } from '../lib/polishPrompt';
+import { getProviderById } from '../lib/providers';
 import CelebrationToast from './CelebrationToast';
 import ErrorToast from './ErrorToast';
 import './PolisherApp.css';
 import SettingsModal from './SettingsModal';
-import SetupModal from './SetupModal';
+import SetupModal, { type SetupSavePayload } from './SetupModal';
 
 const API_KEY_STORAGE_KEY = 'polisher.apikey';
 const PROVIDER_STORAGE_KEY = 'polisher.provider';
+const MODEL_STORAGE_KEY = 'polisher.model';
 const LIVE_POLISH_KEY = 'polisher.livePolish';
 const FLOW_IMPROVEMENT_KEY = 'polisher.flowImprovement';
 const LIVE_DEBOUNCE_MS = 800;
@@ -34,12 +35,14 @@ function computeDiffRatio(input: string, output: string): number {
 export default function PolisherApp() {
   const [apiKey, setApiKey] = useState<string | null>(null);
   const [provider, setProvider] = useState<string | null>(null);
+  const [model, setModel] = useState<string | null>(null);
   const [inputText, setInputText] = useState('');
   const [level, setLevel] = useState<number | null>(DEFAULT_POLISHING_LEVEL);
   const [outputText, setOutputText] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [isSetupModalOpen, setIsSetupModalOpen] = useState(true);
+  const [setupMode, setSetupMode] = useState<'initial' | 'change'>('initial');
   const [copyLabel, setCopyLabel] = useState<'Copy' | 'Copied!'>('Copy');
   const [showDiff, setShowDiff] = useState(false);
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
@@ -69,17 +72,22 @@ export default function PolisherApp() {
   useEffect(() => {
     const storedApiKey = localStorage.getItem(API_KEY_STORAGE_KEY)?.trim() ?? '';
     const storedProvider = localStorage.getItem(PROVIDER_STORAGE_KEY)?.trim() ?? '';
-    if (storedApiKey && storedProvider) {
+    const storedModel = localStorage.getItem(MODEL_STORAGE_KEY)?.trim() ?? '';
+    const providerDef = storedProvider ? getProviderById(storedProvider) : undefined;
+    if (storedApiKey && providerDef && (providerDef.modelSource === 'fixed' || storedModel)) {
       setApiKey(storedApiKey);
       setProvider(storedProvider);
+      setModel(providerDef.modelSource === 'user' ? storedModel : null);
       setIsSetupModalOpen(false);
       return;
     }
 
     localStorage.removeItem(API_KEY_STORAGE_KEY);
     localStorage.removeItem(PROVIDER_STORAGE_KEY);
+    localStorage.removeItem(MODEL_STORAGE_KEY);
     setApiKey(null);
     setProvider(null);
+    setModel(null);
     setIsSetupModalOpen(true);
   }, []);
 
@@ -166,10 +174,12 @@ export default function PolisherApp() {
   const handleClearSettings = () => {
     localStorage.removeItem(API_KEY_STORAGE_KEY);
     localStorage.removeItem(PROVIDER_STORAGE_KEY);
+    localStorage.removeItem(MODEL_STORAGE_KEY);
     localStorage.removeItem(LIVE_POLISH_KEY);
     localStorage.removeItem(FLOW_IMPROVEMENT_KEY);
     setApiKey(null);
     setProvider(null);
+    setModel(null);
     setIsLiveEnabled(false);
     setIsFlowEnabled(false);
     setIsSettingsOpen(false);
@@ -177,12 +187,32 @@ export default function PolisherApp() {
       clearTimeout(debounceTimerRef.current);
       debounceTimerRef.current = null;
     }
+    setSetupMode('initial');
     setIsSetupModalOpen(true);
   };
 
-  const handleSaveSetup = (nextApiKey: string, nextProvider: string) => {
-    setApiKey(nextApiKey);
-    setProvider(nextProvider);
+  const handleSaveSetup = ({ apiKey: nextApiKey, providerId, model: nextModel }: SetupSavePayload) => {
+    const resolvedApiKey = nextApiKey ?? apiKey;
+    if (!resolvedApiKey) {
+      // SetupModal enforces the key; this guards against persisting a stale null
+      return;
+    }
+    const providerDef = getProviderById(providerId);
+    const resolvedModel = providerDef?.modelSource === 'user' ? nextModel : null;
+
+    localStorage.setItem(API_KEY_STORAGE_KEY, resolvedApiKey);
+    localStorage.setItem(PROVIDER_STORAGE_KEY, providerId);
+    if (resolvedModel) {
+      localStorage.setItem(MODEL_STORAGE_KEY, resolvedModel);
+    } else {
+      localStorage.removeItem(MODEL_STORAGE_KEY);
+    }
+    abortControllerRef.current?.abort();
+    abortControllerRef.current = null;
+    setIsLoading(false);
+    setApiKey(resolvedApiKey);
+    setProvider(providerId);
+    setModel(resolvedModel);
     setIsSetupModalOpen(false);
   };
 
@@ -220,16 +250,29 @@ export default function PolisherApp() {
       const response = await fetch('/api/polish', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ apiKey, provider, inputText, systemPrompt: prompt }),
+        body: JSON.stringify({ apiKey, provider, model: model ?? undefined, inputText, systemPrompt: prompt }),
         signal: controller.signal,
       });
 
-      const data: PolishApiResponse = await response.json();
-
-      if ('error' in data) {
-        throw new Error(data.error);
+      let data: unknown = null;
+      try {
+        data = await response.json();
+      } catch (error) {
+        console.error('Could not parse response body:', error);
       }
-      if (!response.ok) {
+
+      if (abortControllerRef.current !== controller || controller.signal.aborted) {
+        return;
+      }
+
+      if (typeof data !== 'object' || data === null) {
+        throw new Error('Invalid response body');
+      }
+      if ('error' in data && typeof data.error === 'string' && data.error.trim()) {
+        setErrorMessage(data.error);
+        return;
+      }
+      if (!response.ok || !('result' in data) || typeof data.result !== 'string') {
         throw new Error(`Server error ${response.status}`);
       }
 
@@ -246,6 +289,9 @@ export default function PolisherApp() {
         }
       }
     } catch (error) {
+      if (abortControllerRef.current !== controller || controller.signal.aborted) {
+        return;
+      }
       if (error instanceof DOMException && error.name === 'AbortError') {
         return;
       }
@@ -411,13 +457,22 @@ export default function PolisherApp() {
         isOpen={isSettingsOpen}
         onClose={() => setIsSettingsOpen(false)}
         onClearSettings={handleClearSettings}
+        onChangeProvider={() => {
+          setIsSettingsOpen(false);
+          setSetupMode('change');
+          setIsSetupModalOpen(true);
+        }}
       />
-      <SetupModal
-        isOpen={isSetupModalOpen}
-        apiKeyStorageKey={API_KEY_STORAGE_KEY}
-        providerStorageKey={PROVIDER_STORAGE_KEY}
-        onSave={handleSaveSetup}
-      />
+      {isSetupModalOpen && (
+        <SetupModal
+          mode={setupMode}
+          initialProviderId={provider ?? 'abacus'}
+          initialModel={model ?? ''}
+          currentProviderId={provider ?? ''}
+          onSave={handleSaveSetup}
+          onCancel={() => setIsSetupModalOpen(false)}
+        />
+      )}
       <ErrorToast message={errorMessage} onDismiss={() => setErrorMessage(null)} />
       <CelebrationToast
         message={showCelebration ? 'Already great! Very few changes needed.' : null}

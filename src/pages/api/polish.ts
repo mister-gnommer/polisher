@@ -9,6 +9,7 @@ interface PolishRequestBody {
   provider?: unknown;
   inputText?: unknown;
   systemPrompt?: unknown;
+  model?: unknown;
 }
 
 const jsonResponse = (payload: PolishApiResponse, status: number) =>
@@ -28,7 +29,7 @@ export const POST: APIRoute = async ({ request }) => {
     return jsonError("Invalid JSON body.", 400);
   }
 
-  const { apiKey, provider: providerId, inputText, systemPrompt } = body;
+  const { apiKey, provider: providerId, inputText, systemPrompt, model } = body;
 
   if (!apiKey || typeof apiKey !== "string") {
     return jsonError("apiKey is required.", 400);
@@ -47,12 +48,18 @@ export const POST: APIRoute = async ({ request }) => {
   }
 
   const providerClient = getProviderById(providerId)!;
+  const trimmedModel = typeof model === "string" ? model.trim() : "";
+  if (providerClient.modelSource === "user" && !trimmedModel) {
+    return jsonError("model is required.", 400);
+  }
+
 
   try {
     const result = await providerClient.polish({
       apiKey,
       inputText,
       systemPrompt,
+      model: trimmedModel || undefined,
     });
 
     return jsonResponse({ result }, 200);

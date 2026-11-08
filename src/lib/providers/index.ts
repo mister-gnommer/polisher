@@ -1,8 +1,10 @@
 import { abacusProvider } from "./abacus";
+import { openrouterProvider } from "./openrouter";
 import type { PolisherProvider } from "./types";
 
 const providersById: Record<string, PolisherProvider> = {
   [abacusProvider.id]: abacusProvider,
+  [openrouterProvider.id]: openrouterProvider,
 };
 
 export const getProviderById = (id: string): PolisherProvider => {

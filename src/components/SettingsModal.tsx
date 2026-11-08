@@ -2,6 +2,7 @@ interface SettingsModalProps {
   isOpen: boolean;
   onClose: () => void;
   onClearSettings: () => void;
+  onChangeProvider: () => void;
 }
 
 const PLANNED_FEATURES = [
@@ -10,7 +11,7 @@ const PLANNED_FEATURES = [
   'Rich text input/output',
 ];
 
-export default function SettingsModal({ isOpen, onClose, onClearSettings }: SettingsModalProps) {
+export default function SettingsModal({ isOpen, onClose, onClearSettings, onChangeProvider }: SettingsModalProps) {
   if (!isOpen) {
     return null;
   }
@@ -32,9 +33,14 @@ export default function SettingsModal({ isOpen, onClose, onClearSettings }: Sett
           <p className="muted settings-section-desc">
             Removes your API key and provider from this device. You will need to set them up again.
           </p>
-          <button className="settings-danger-button" type="button" onClick={onClearSettings}>
-            Clear all local settings
-          </button>
+          <div className="settings-account-actions">
+            <button className="settings-action-button" type="button" onClick={onChangeProvider}>
+              Change provider
+            </button>
+            <button className="settings-danger-button" type="button" onClick={onClearSettings}>
+              Clear all local settings
+            </button>
+          </div>
         </div>
 
         <div className="settings-section">
