@@ -1,51 +1,68 @@
 import type { SubmitEvent } from 'react';
 import { useState } from 'react';
 import { AVAILABLE_PROVIDERS } from '../lib/providers';
-import type { PolisherProvider } from '../lib/providers/types';
 
-function isKnownProvider(providerId: string, providers: PolisherProvider[]): boolean {
-  return providers.some((p) => p.id === providerId);
+export interface SetupSavePayload {
+  apiKey: string | null;
+  providerId: string;
+  model: string;
 }
 
 interface SetupModalProps {
-  isOpen: boolean;
-  apiKeyStorageKey: string;
-  providerStorageKey: string;
-  onSave: (apiKey: string, providerId: string) => void;
+  mode: 'initial' | 'change';
+  initialProviderId: string;
+  initialModel: string;
+  currentProviderId: string;
+  onSave: (payload: SetupSavePayload) => void;
+  onCancel: () => void;
 }
 
+const MODEL_PATTERN = /^[^\s/]+\/\S+$/;
+
 export default function SetupModal({
-  isOpen,
-  apiKeyStorageKey,
-  providerStorageKey,
+  mode,
+  initialProviderId,
+  initialModel,
+  currentProviderId,
   onSave,
+  onCancel,
 }: SetupModalProps) {
   const [apiKey, setApiKey] = useState('');
-  const [providerId, setProviderId] = useState("abacus"); // default provider id
+  const [providerId, setProviderId] = useState(initialProviderId);
+  const [model, setModel] = useState(initialModel);
   const [error, setError] = useState<string | null>(null);
 
   const providers = AVAILABLE_PROVIDERS;
-
-  if (!isOpen) {
-    return null;
-  }
+  const usesUserModel =
+    providers.find((provider) => provider.id === providerId)?.modelSource === 'user';
+  const canKeepKey = mode === 'change' && providerId === currentProviderId;
 
   const handleSave = (event: SubmitEvent) => {
     event.preventDefault();
     const trimmedApiKey = apiKey.trim();
-    if (!trimmedApiKey) {
+    const trimmedModel = model.trim();
+
+    if (!trimmedApiKey && !canKeepKey) {
       setError('API key is required.');
       return;
     }
-    if (!isKnownProvider(providerId, providers)) {
-      setError('Please choose a supported provider.');
-      return;
+    if (usesUserModel) {
+      if (!trimmedModel) {
+        setError('Model is required.');
+        return;
+      }
+      if (!MODEL_PATTERN.test(trimmedModel)) {
+        setError('Model must look like vendor/model (e.g. openai/gpt-5.2).');
+        return;
+      }
     }
 
     setError(null);
-    localStorage.setItem(apiKeyStorageKey, trimmedApiKey);
-    localStorage.setItem(providerStorageKey, providerId);
-    onSave(trimmedApiKey, providerId);
+    onSave({
+      apiKey: trimmedApiKey || null,
+      providerId,
+      model: trimmedModel,
+    });
   };
 
   return (
@@ -64,8 +81,9 @@ export default function SetupModal({
               type="password"
               value={apiKey}
               onChange={(event) => setApiKey(event.target.value)}
-              required
+              required={!canKeepKey}
             />
+            {canKeepKey && <span className="muted setup-hint">Leave blank to keep current key</span>}
           </label>
 
           <label className="setup-field">
@@ -79,11 +97,32 @@ export default function SetupModal({
             </select>
           </label>
 
+          {usesUserModel && (
+            <label className="setup-field">
+              <span className="label">Model</span>
+              <input
+                className="setup-input"
+                type="text"
+                placeholder="e.g. openai/gpt-5.2"
+                value={model}
+                onChange={(event) => setModel(event.target.value)}
+                required
+              />
+            </label>
+          )}
+
           {error && <p className="setup-error">{error}</p>}
 
-          <button className="polisher-button" type="submit">
-            Save
-          </button>
+          <div className="setup-actions">
+            {mode === 'change' && (
+              <button className="setup-cancel-button" type="button" onClick={onCancel}>
+                Cancel
+              </button>
+            )}
+            <button className="polisher-button" type="submit">
+              Save
+            </button>
+          </div>
         </form>
       </section>
     </div>

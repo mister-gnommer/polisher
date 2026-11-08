@@ -7,18 +7,20 @@ npm run dev       # dev server at http://localhost:4321
 npm run build     # production build (also runs tsc implicitly)
 npm run preview   # preview production build locally
 npx tsc --noEmit  # manual typecheck without building
+node --test tests/*.test.mjs  # unit tests (node:test, no npm script)
 ```
 
-No lint, format, or test scripts exist. There is no test suite.
+No lint or format scripts exist.
 
 ## Architecture
 
 Single Astro app (not a monorepo). One page: `src/pages/index.astro` mounts `<PolisherApp client:load />`.
 
 - `src/components/PolisherApp.tsx` — all app state; the only React island
-- `src/components/SetupModal.tsx` — blocking modal for API key + provider setup
-- `src/lib/providers/` — provider abstraction; add new LLM providers here
-- `src/pages/api/polish.ts` — server-side CORS proxy to Abacus API (Vercel serverless function)
+- `src/components/SetupModal.tsx` — blocking modal for API key + provider setup (optional model for user-model providers)
+- `src/components/SettingsModal.tsx` — settings, "Change provider" reopens setup, "Clear all local settings"
+- `src/lib/providers/` — provider abstraction; shared OpenAI-compatible request logic in `openAiCompatible.ts`; add new LLM providers here
+- `src/pages/api/polish.ts` — server-side CORS proxy to the selected provider's chat completions API (Vercel serverless function)
 - `src/styles/global.css` — CSS custom properties and resets
 - `src/components/PolisherApp.css` — all component-level styles
 
@@ -28,12 +30,13 @@ Single Astro app (not a monorepo). One page: `src/pages/index.astro` mounts `<Po
 
 ## API proxy
 
-The frontend never calls the Abacus API directly. It always calls `POST /api/polish` (same-origin). The proxy forwards to `https://routellm.abacus.ai/v1/chat/completions`. No `.env` file and no `import.meta.env` references anywhere — the API key flows through the request body at runtime.
+The frontend never calls LLM providers directly. It always calls `POST /api/polish` (same-origin). The proxy forwards to the selected provider's chat completions URL: `https://routellm.abacus.ai/v1/chat/completions` for `"abacus"`, `https://openrouter.ai/api/v1/chat/completions` for `"openrouter"`. The request body may include `model` (required for `"openrouter"`, ignored by `"abacus"`). No `.env` file and no `import.meta.env` references anywhere — the API key flows through the request body at runtime.
 
 ## localStorage keys
 
 - `polisher.apikey` — user's API key
-- `polisher.provider` — provider ID (currently only `"abacus"`)
+- `polisher.provider` — provider ID (`"abacus"` or `"openrouter"`)
+- `polisher.model` — model ID for user-supplied-model providers (OpenRouter); removed for fixed-model providers (Abacus)
 
 ## Key state behaviours
 
@@ -69,10 +72,3 @@ Implement the `PolisherProvider` interface (`src/lib/providers/types.ts`), then 
 ## Deployment
 
 Vercel via GitHub integration (push to `main`). No CI workflow files in the repo.
-
-## `sessions.md`
-
-Gitignored. Append an entry at the start of every conversation:
-```
-- `<session-id>` — <YYYY-MM-DD> — <one-line description>
-```
