@@ -1,8 +1,0 @@
-- `06bbf3df-fb72-4589-af15-7ba7714910f3` — 2026-03-26 — Familiarizing with project; asked about .cursor rules and Claude Code compatibility
-- `f9c1e584-1296-4702-84a9-f2f7e26a0563` — 2026-04-08 — Checking for TODOs in the project
-- `d65c9e27-7523-4c2f-9c7c-1d0f014cdf4f` — 2026-04-17 — Adding todos for live debounced polishes and output clearing on input change
-- `d65c9e27-7523-4c2f-9c7c-1d0f014cdf4f` — 2026-04-25 — Creating AGENTS.md for the repository
-- `ses_1a6023a18ffeW0hRRFM83fLwsm` — 2026-05-24 — Live debounced polishing with toggle; AbortController, separated loading states
-- `01a1b5f0-109a-7c31-821c-443503085540` — 2026-11-07 — Assess Nemotron model switch and identify current model.
-- `46e9319f-a640-4074-a17e-144fdbca1bd1` — 2026-11-07 — Propose OpenSpec change add-openrouter
-- `ses_e4570b8f4ffeolpFiVkf18fghy` — 2026-11-08 — Commit openspec agent skills and add-openrouter proposal
